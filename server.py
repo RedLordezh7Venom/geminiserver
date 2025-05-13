@@ -30,7 +30,7 @@ model = genai.GenerativeModel(MODEL_NAME)
 class PromptRequest(BaseModel):
     prompt: str
 
-# --- API Endpoint ---
+# --- API Endpoint for POST request ---
 @app.post("/gemini")
 async def query_gemini(request: PromptRequest):
     prompt_text = request.prompt
@@ -54,10 +54,35 @@ async def query_gemini(request: PromptRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+# --- API Endpoint for GET request ---
+@app.get("/ask")
+async def ask_question(q: str = None):
+    if not q:
+        raise HTTPException(status_code=400, detail="Missing 'q' query parameter")
+
+    try:
+        response = model.generate_content(q)
+        if hasattr(response, "parts") and response.parts:
+            result_text = "".join(part.text for part in response.parts if hasattr(part, 'text'))
+        elif hasattr(response, 'text'):
+            result_text = response.text
+        else:
+            result_text = "No text content found in response."
+            print(f"Full Gemini Response: {response}")
+
+        return {"response": result_text}
+    except Exception as e:
+        print(f"Error during Gemini API call: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- Health Check Endpoint ---
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
 
+# --- Run with Uvicorn ---
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=5000)
