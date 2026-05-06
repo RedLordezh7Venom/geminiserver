@@ -39,3 +39,10 @@ async def ask_question(q: str = Query(..., description="The question to ask the 
 @app.get("/")
 async def root():
     return {"message": "Groq API is running. Use GET /ask?q=your_question to ask a question."}
+
+# --- Run with Uvicorn ---
+if __name__ == "__main__":
+    import uvicorn
+    # Render assigns the PORT environment variable dynamically, but we default to 5000
+    port = int(os.environ.get("PORT", 5000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
